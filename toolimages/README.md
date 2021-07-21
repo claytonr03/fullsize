@@ -1,0 +1,1 @@
+This is directory all your files show up when you type photo or when you run ~/Documents/betterprocess/fullsize.sh -l.
