@@ -53,36 +53,43 @@ y_dim = sys.argv[5]
 
 ###########################
 frame = cv2.imread("/home/pi/Documents/unfish/corrected_images/TopView.jpg",1)
-scale_percentx = 101
-scale_percenty = 95
+scale_percentx = 69.5
+scale_percenty = 69.5
 width = int(frame.shape[1] * scale_percentx / 100)
 height = int(frame.shape[0] * scale_percenty / 100)
 dsize = (width, height)
 frame = cv2.resize(frame, dsize)
 #Y is first with Yo and Y distance
-frameT = frame[400:2600, 1000:3300]
+#frameT = frame[400:2600, 1000:3300]
+frameT = frame[120:4000, 550:3500]
 ###########################
  
 frame = cv2.imread("/home/pi/Documents/unfish/corrected_images/workingImage.jpg",1)
-scale_percentx = 101
-scale_percenty = 95
+#scale_percentx = 69.5
+#scale_percenty = 69.5
 width = int(frame.shape[1] * scale_percentx / 100)
 height = int(frame.shape[0] * scale_percenty / 100)
 dsize = (width, height)
-frame = cv2.resize(frame, dsize)
+#frame = cv2.resize(frame, ds)ize)
+frame = frame[120:4000, 550:3500]
 
 #print(dsize)
 
 #Y is first with Yo and Y distance
-frame = frame[400:2600, 1000:3300]
+#frame = frame[400:2600, 1000:3300]
 
 fgGray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 thresh = cv2.threshold(fgGray, 0, 255,
 	cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
-thresh = cv2.erode(thresh, None, iterations=3)#3
-thresh = cv2.dilate(thresh, None, iterations=4)#4
+#cv2.namedWindow("test",cv2.WND_PROP_FULLSCREEN)
+#cv2.setWindowProperty("test",cv2.WND_PROP_FULLSCREEN,cv2.CV_WINDOW_FULLSCREEN)
+
+thresh = cv2.erode(thresh, None, iterations=5)#4
+thresh = cv2.dilate(thresh, None, iterations=1)#4
+cv2.imshow("test2", thresh)
+cv2.waitKey(0)
 
 blurred = cv2.GaussianBlur(thresh, (3, 3), 0)
 edged = cv2.Canny(thresh, 50, 130)
