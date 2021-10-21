@@ -32,7 +32,11 @@ image_directory = '/home/pi/Documents/captures'
 
 if __name__ == "__main__":
   c1 = CalibratedPiCamera("webcam", "./camera_calibration_data.json")
-  c1.display_raw_capture()
+  # c1.display_raw_capture()
+  # c1.display_blobs()
+  c1.circle_scale_calibration(24.257)
+
+
   # c2 = CalibratedPiCamera("pi", "./camera_calibration_data.json")
 	
   # cv2.namedWindow("Raw Image")
