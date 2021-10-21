@@ -6,8 +6,17 @@
 import cv2
 import picamera
 # import picamera.array
+
+
+from imutils import perspective
+from imutils import contours
+import imutils 
+
+import numpy as np
+
 import io
 import json
+
 
 ASYMMETRIC_CIRCLES_SHAPE = (4, 11)
 
@@ -49,10 +58,10 @@ class CalibratedPiCamera:
     return None
 
   # Capture and return calibrated image
+  # TODO: Note - temporary return raw_image
   def capture_calibrated(self):
     raw_image = self.capture_raw()
-
-    pass 
+    return raw_image
 
   # Calibration function to determine camera intrinsics
   def calibrate_intrinsics(self):
@@ -104,3 +113,41 @@ class CalibratedPiCamera:
       cv2.imshow('blobs', raw_image)
     cv2.waitKey(0)
 
+  def circle_scale_calibration(self, object_radius):
+    cv2.namedWindow('circle scale calibration')
+    calib_image = self.capture_calibrated()
+    calib_image_gray = cv2.cvtColor(calib_image, cv2.COLOR_BGR2GRAY)
+    calib_image_gray = cv2.GaussianBlur(calib_image_gray, (7, 7), 0)
+
+    edged = cv2.Canny(calib_image_gray, 50, 100)
+    edged = cv2.dilate(edged, None, iterations=1)
+    edged = cv2.erode(edged, None, iterations=1)
+
+    cntrs = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cntrs = imutils.grab_contours(cntrs)
+
+    (cntrs, _) = contours.sort_contours(cntrs)
+    pixelsPerMetric = None
+
+    for c in cntrs:
+      if cv2.contourArea(c) < 100:
+        continue
+    
+      orig = calib_image.copy()
+      box = cv2.minAreaRect(c)
+      (pixel_width, pixel_height) = box[1]
+      print("Width: {}px, Height: {}px".format(pixel_width, pixel_height))
+      points = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+      points = np.array(points, dtype="int")
+      # order the points in the contour such that they appear
+      # in top-left, top-right, bottom-right, and bottom-left
+      # order, then draw the outline of the rotated bounding
+      # box
+      points = perspective.order_points(points)
+      drawn_image = cv2.drawContours(orig, [points.astype("int")], -1, (0, 255, 0), 2)
+      cv2.imshow('circle scale calibration', drawn_image)
+      cv2.waitKey(0)
+      if pixelsPerMetric is None:
+        pixelsPerMetric = pixel_width/object_radius
+      
+      print("{} px/mm".format(pixelsPerMetric))
