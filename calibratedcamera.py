@@ -18,8 +18,12 @@ import numpy as np
 import io
 import json
 
+import time
+
+NUM_CAL_IMAGES = 1
 
 ASYMMETRIC_CIRCLES_SHAPE = (4, 11)
+CHESSBOARD_SHAPE = (6, 9)
 
 class CalibratedPiCamera:
   scale = (1, 1)
@@ -67,6 +71,7 @@ class CalibratedPiCamera:
   # TODO: Note - temporary return raw_image
   def capture_calibrated(self):
     raw_image = self.capture_raw()
+    return raw_image
 
     h, w = raw_image.shape[:2]
     matrix = self.cal_data['camera_matrix']
@@ -78,7 +83,7 @@ class CalibratedPiCamera:
 
   # Calibration function to determine camera intrinsics
   # TODO: Complete intrinsics calibration function 
-  def calibrate_intrinsics(self):
+  def calibrate_intrinsics(self, pattern_shape):
     criteria = (cv2.TERM_CRITERIA_EPS +
               cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -91,23 +96,39 @@ class CalibratedPiCamera:
     
     
     #  3D points real world coordinates
-    objectp3d = np.zeros((1, ASYMMETRIC_CIRCLES_SHAPE[0]
-                          * ASYMMETRIC_CIRCLES_SHAPE[1],
+    # objectp3d = np.zeros((1, ASYMMETRIC_CIRCLES_SHAPE[0]
+    #                       * ASYMMETRIC_CIRCLES_SHAPE[1],
+    #                       3), np.float32)
+    # objectp3d[0, :, :2] = np.mgrid[0:ASYMMETRIC_CIRCLES_SHAPE[0],
+    #                               0:ASYMMETRIC_CIRCLES_SHAPE[1]].T.reshape(-1, 2)
+    
+    # objectp3d = np.zeros((1, CHESSBOARD_SHAPE[0]
+    #                       * CHESSBOARD_SHAPE[1],
+    #                       3), np.float32)
+    # objectp3d[0, :, :2] = np.mgrid[0:CHESSBOARD_SHAPE[0],
+    #                               0:CHESSBOARD_SHAPE[1]].T.reshape(-1, 2)
+    
+    objectp3d = np.zeros((1, pattern_shape[0]
+                          * pattern_shape[1],
                           3), np.float32)
-    objectp3d[0, :, :2] = np.mgrid[0:ASYMMETRIC_CIRCLES_SHAPE[0],
-                                  0:ASYMMETRIC_CIRCLES_SHAPE[1]].T.reshape(-1, 2)
+    objectp3d[0, :, :2] = np.mgrid[0:pattern_shape[0],
+                                  0:pattern_shape[1]].T.reshape(-1, 2)
 
 
     cv2.namedWindow('intrinsics calibration')
-    for i in range(0, 10):
+    for i in range(0, NUM_CAL_IMAGES):
       while True:
         raw_image = self.capture_raw()
         gray_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2GRAY)
-    
+
+        cv2.imshow('intrinsics calibration', gray_image)
         # Find the chess boardt corners
         # If desired number of corners are
         # found in the image then ret = true
-        corners = self.find_blobs(gray_image)
+        # corners = self.find_blobs(gray_image)
+        corners = self.find_blobs(gray_image, pattern_shape)
+
+        # corners = self.find_chessboard(gray_image)
     
         # If desired number of corners can be detected then,
         # refine the pixel coordinates and display
@@ -123,9 +144,18 @@ class CalibratedPiCamera:
             twodpoints.append(corners2)
     
             # Draw and display the corners
+            # drawn_image = cv2.drawChessboardCorners(raw_image,
+            #                                   ASYMMETRIC_CIRCLES_SHAPE,
+            #                                   corners2, True)
+
             drawn_image = cv2.drawChessboardCorners(raw_image,
-                                              ASYMMETRIC_CIRCLES_SHAPE,
+                                              pattern_shape,
                                               corners2, True)
+
+            # drawn_image = cv2.drawChessboardCorners(raw_image,
+            #                                   CHESSBOARD_SHAPE,
+            #                                   corners2, True)
+
             cv2.imshow('intrinsics calibration', drawn_image)
             break
 
@@ -147,6 +177,7 @@ class CalibratedPiCamera:
     self.cal_data['camera_matrix'] = matrix
     self.cal_data['distortion_coefficient'] = distortion
     self.save_intrinsics()
+    cv2.destroyWindow('intrinsics calibration')
 
 
   # raw_image = self.capture_raw()
@@ -173,7 +204,7 @@ class CalibratedPiCamera:
 
   # Calibration function to determine camera scaling 
   def calibrate_scale(self, object_diameter):
-    print("Place the Calibration Grid into the center of the view area")
+    input("Place the Scale Calibration Grid into the center of the view area. (Press Enter to continue)")
 
     cv2.namedWindow('scale calibration')
     calib_image = self.capture_calibrated()
@@ -184,6 +215,9 @@ class CalibratedPiCamera:
     edged = cv2.dilate(edged, None, iterations=1)
     edged = cv2.erode(edged, None, iterations=1)
 
+    # cv2.imshow('scale calibration', edged)
+    # cv2.waitKey(0)
+
     cntrs = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cntrs = imutils.grab_contours(cntrs)
 
@@ -192,22 +226,17 @@ class CalibratedPiCamera:
     drawn_image = calib_image.copy()
     count = 0
     (total_pixel_width, total_pixel_height) = (0,0)
+
+    # TODO: Need better contour rejection criteria:
     for c in cntrs:
-      if cv2.contourArea(c) < 100:
+      if cv2.contourArea(c) < 500:
         continue
-    
-      
-      box = cv2.minAreaRect(c)
-      total_pixel_width += box[1][0]
-      total_pixel_height += box[1][1]
-      points = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-      points = np.array(points, dtype="int")
-      # order the points in the contour such that they appear
-      # in top-left, top-right, bottom-right, and bottom-left
-      # order, then draw the outline of the rotated bounding
-      # box
-      points = perspective.order_points(points)
-      drawn_image = cv2.drawContours(drawn_image, [points.astype("int")], -1, (0, 255, 0), 2)
+
+      x,y,w,h = cv2.boundingRect(c)
+      total_pixel_width += w
+      total_pixel_height += h
+      drawn_image = cv2.rectangle(drawn_image, (x,y), (x+w, y+h), (0,255,0), 1)
+
       
       count += 1
 
@@ -229,10 +258,15 @@ class CalibratedPiCamera:
     self.pixels_per_metric_x = width_avg/object_diameter
     self.pixels_per_metric_y = height_avg/object_diameter
 
-  def calibrate(self, cal_object_diameter=None):
+  def calibrate(self, pattern_shape=None, cal_object_diameter=None):
+    if pattern_shape is None:
+      x = int(input("Enter pattern shape X: "))
+      y = int(input("Enter pattern shape y: "))
+      pattern_shape = (x,y)
+
     if cal_object_diameter is None:
       cal_object_diameter = float(input("Enter calibration dot diameter: "))
-    self.calibrate_intrinsics()
+    self.calibrate_intrinsics(pattern_shape)
     self.calibrate_scale(cal_object_diameter)
 
   def print_calibration_data(self):
@@ -271,19 +305,28 @@ class CalibratedPiCamera:
     cv2.imshow('raw capture', raw_image)
     cv2.waitKey(0)
 
-  def find_blobs(self, image):
-    ret, points = cv2.findCirclesGrid(image, ASYMMETRIC_CIRCLES_SHAPE, flags=cv2.CALIB_CB_ASYMMETRIC_GRID)
+  def find_blobs(self, image, pattern_shape):
+    ret, points = cv2.findCirclesGrid(image, pattern_shape, flags=cv2.CALIB_CB_SYMMETRIC_GRID)
     if ret:
       return points
     return None
 
-  def display_blobs(self):
+  def find_chessboard(self, image):
+    ret, points = cv2.findChessboardCorners(image, CHESSBOARD_SHAPE,
+                        cv2.CALIB_CB_ADAPTIVE_THRESH
+                        + cv2.CALIB_CB_FAST_CHECK +
+                        cv2.CALIB_CB_NORMALIZE_IMAGE)
+    if ret:
+      return points
+    return None
+
+  def display_blobs(self, pattern_shape):
     raw_image = self.capture_raw()
     cv2.namedWindow('blobs')
-    blobs = self.find_blobs(raw_image)
+    blobs = self.find_blobs(raw_image, pattern_shape)
     # print(blobs)
     if blobs.any():
-      drawn_image = cv2.drawChessboardCorners(raw_image, ASYMMETRIC_CIRCLES_SHAPE, blobs, True)
+      drawn_image = cv2.drawChessboardCorners(raw_image, pattern_shape, blobs, True)
       cv2.imshow('blobs', drawn_image)
     else:
       cv2.imshow('blobs', raw_image)
