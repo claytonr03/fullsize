@@ -31,9 +31,6 @@ class CalibratedPiCamera:
   cam = None
   cal_data = {}
 
-  pixels_per_metric_x = None
-  pixels_per_metric_y = None
-
   def __init__(self, type, calibration_filepath):
     self.type = type
 
@@ -290,8 +287,9 @@ class CalibratedPiCamera:
     # if pixels_per_metric_y is None:
     #   pixels_per_metric_y = height_avg/object_radius
 
-    self.pixels_per_metric_x = width_avg/object_diameter
-    self.pixels_per_metric_y = height_avg/object_diameter
+    pixels_per_metric_x = width_avg/object_diameter
+    pixels_per_metric_y = height_avg/object_diameter
+    self.cal_data['pixels_per_metric'] = [pixels_per_metric_x, pixels_per_metric_y]
 
   def calibrate(self, pattern_shape=None, cal_object_diameter=None, area_criteria=None):
     if pattern_shape is None:
@@ -320,8 +318,8 @@ class CalibratedPiCamera:
     print("\n----------------------")
     print("Scale Calibration")
     print("----------------------")
-    print("X: {} px/unit".format(self.pixels_per_metric_x))
-    print("Y: {} px/unit".format(self.pixels_per_metric_y))
+    print("X: {} px/unit".format(self.cal_data['pixels_per_metric'][0]))
+    print("Y: {} px/unit".format(self.cal_data['pixels_per_metric'][1]))
     print("======================")
 
   def correct_image(calibration_filepath, image_filepath):
