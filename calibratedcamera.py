@@ -174,8 +174,8 @@ class CalibratedPiCamera:
     # detected corners (twodpoints)
     ret, matrix, distortion, r_vecs, t_vecs = cv2.calibrateCamera(
         threedpoints, twodpoints, gray_image.shape[::-1], None, None)
-    self.cal_data['camera_matrix'] = matrix
-    self.cal_data['distortion_coefficient'] = distortion
+    self.cal_data['camera_matrix'] = matrix.tolist()
+    self.cal_data['distortion_coefficient'] = distortion.tolist()
     self.save_intrinsics()
     cv2.destroyWindow('intrinsics calibration')
 
@@ -193,7 +193,8 @@ class CalibratedPiCamera:
 
   # TODO: save intrinsics to file 
   def save_intrinsics(self):
-    pass
+    with open("camera_calibration_data_generated.json", 'w') as f:
+      json.dump(self.cal_data, f)
 
 
   def undistort_image(self, dist_image):
