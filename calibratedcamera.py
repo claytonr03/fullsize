@@ -55,7 +55,9 @@ class CalibratedPiCamera:
     
     if self.type == "webcam":
       for retries in range(0, 10):
-        ret, raw_capture = self.cam.read()
+        # hacky workaround to update the webcam image - not sure why it doesn't always update
+        for i in range(0, 10):
+          ret, raw_capture = self.cam.read()
         if ret:
           return raw_capture
     
@@ -70,16 +72,105 @@ class CalibratedPiCamera:
   # Calibration function to determine camera intrinsics
   # TODO: Complete intrinsics calibration function 
   def calibrate_intrinsics(self):
-    raw_image = self.capture_raw()
+    criteria = (cv2.TERM_CRITERIA_EPS +
+              cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+
+    # Vector for 3D points
+    threedpoints = []
+    
+    # Vector for 2D points
+    twodpoints = []
+    
+    
+    #  3D points real world coordinates
+    objectp3d = np.zeros((1, ASYMMETRIC_CIRCLES_SHAPE[0]
+                          * ASYMMETRIC_CIRCLES_SHAPE[1],
+                          3), np.float32)
+    objectp3d[0, :, :2] = np.mgrid[0:ASYMMETRIC_CIRCLES_SHAPE[0],
+                                  0:ASYMMETRIC_CIRCLES_SHAPE[1]].T.reshape(-1, 2)
+    prev_img_shape = None
+
+    matrix = []
+    distortion = []
+    r_vecs = []
+    t_vecs = []
+
+    # calibrated camera intrinsic matrix
+    newcamera = []
+
     cv2.namedWindow('intrinsics calibration')
-    blobs = self.find_blobs(raw_image)
-    # print(blobs)
-    if blobs.any():
-      drawn_image = cv2.drawChessboardCorners(raw_image, ASYMMETRIC_CIRCLES_SHAPE, blobs, True)
-      cv2.imshow('intrinsics calibration', drawn_image)
-    else:
-      cv2.imshow('intrinsics calibration', raw_image)
-    cv2.waitKey(0)
+    for i in range(0, 10):
+      while True:
+        raw_image = self.capture_raw()
+        gray_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2GRAY)
+    
+        # Find the chess boardt corners
+        # If desired number of corners are
+        # found in the image then ret = true
+        corners = self.find_blobs(gray_image)
+    
+        # If desired number of corners can be detected then,
+        # refine the pixel coordinates and display
+        # them on the images of checker board
+        if corners is not None:
+            threedpoints.append(objectp3d)
+    
+            # Refining pixel coordinates
+            # for given 2d points.
+            corners2 = cv2.cornerSubPix(
+                gray_image, corners, (11, 11), (-1, -1), criteria)
+    
+            twodpoints.append(corners2)
+    
+            # Draw and display the corners
+            drawn_image = cv2.drawChessboardCorners(raw_image,
+                                              ASYMMETRIC_CIRCLES_SHAPE,
+                                              corners2, True)
+            cv2.imshow('intrinsics calibration', drawn_image)
+            break
+
+        else:
+          print("Could not find calibration pattern, please re-align and press any key to retry")
+          cv2.waitKey(0) 
+        
+      cv2.waitKey(0)  
+
+    h, w = drawn_image.shape[:2]
+    
+
+    # Perform camera calibration by
+    # passing the value of above found out 3D points (threedpoints)
+    # and its corresponding pixel coordinates of the
+    # detected corners (twodpoints)
+    ret, matrix, distortion, r_vecs, t_vecs = cv2.calibrateCamera(
+        threedpoints, twodpoints, gray_image.shape[::-1], None, None)
+    self.cal_data['camera_matrix'] = matrix
+    self.cal_data['distortion_coefficient'] = distortion
+    self.save_intrinsics()
+
+
+  # raw_image = self.capture_raw()
+  # cv2.namedWindow('intrinsics calibration')
+  # blobs = self.find_blobs(raw_image)
+  # # print(blobs)
+  # if blobs.any():
+  #   drawn_image = cv2.drawChessboardCorners(raw_image, ASYMMETRIC_CIRCLES_SHAPE, blobs, True)
+  #   cv2.imshow('intrinsics calibration', drawn_image)
+  # else:
+  #   cv2.imshow('intrinsics calibration', raw_image)
+  # cv2.waitKey(0)
+
+  # TODO: save intrinsics to file 
+  def save_intrinsics():
+    pass
+
+
+  def undistort_image(self, dist_image):
+    h, w = dist_image.shape[:2]
+    self.newcamera, roi = cv2.getOptimalNewCameraMatrix(self.matrix, self.distortion,(w, h), 1, (w,h))
+    undist_image = cv2.undistort(dist_image, self.matrix, self.distortion, None, self.newcamera)
+    return undist_image
 
   # Calibration function to determine camera scaling 
   def calibrate_scale(self, object_diameter):
@@ -124,6 +215,7 @@ class CalibratedPiCamera:
     cv2.imshow('scale calibration', drawn_image)
     cv2.waitKey(0)
 
+    # Note: Do the rotation values of the box potentially impact the calibration accuracy?
     width_avg = (total_pixel_width / count)
     height_avg = (total_pixel_height / count)
 
