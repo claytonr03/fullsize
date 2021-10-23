@@ -6,7 +6,7 @@
 
 import cv2
 import picamera
-# import picamera.array
+import picamera.array
 
 
 from imutils import perspective
@@ -20,7 +20,7 @@ import json
 
 import time
 
-NUM_CAL_IMAGES = 1
+NUM_CAL_IMAGES = 10
 
 ASYMMETRIC_CIRCLES_SHAPE = (4, 11)
 CHESSBOARD_SHAPE = (6, 9)
@@ -71,11 +71,11 @@ class CalibratedPiCamera:
   # TODO: Note - temporary return raw_image
   def capture_calibrated(self):
     raw_image = self.capture_raw()
-    return raw_image
+    #return raw_image
 
     h, w = raw_image.shape[:2]
-    matrix = self.cal_data['camera_matrix']
-    distortion = self.cal_data['distortion_coefficient']
+    matrix = np.array(self.cal_data['camera_matrix'])
+    distortion = np.array(self.cal_data['distortion_coefficient'])
     newcamera, roi = cv2.getOptimalNewCameraMatrix(matrix, distortion,(w, h), 1, (w,h))
     undist_image = cv2.undistort(raw_image, matrix, distortion, None, newcamera)
 
@@ -85,7 +85,7 @@ class CalibratedPiCamera:
   # TODO: Complete intrinsics calibration function 
   def calibrate_intrinsics(self, pattern_shape):
     criteria = (cv2.TERM_CRITERIA_EPS +
-              cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+              cv2.TERM_CRITERIA_MAX_ITER, 10, 1)
 
 
     # Vector for 3D points
@@ -116,19 +116,35 @@ class CalibratedPiCamera:
 
 
     cv2.namedWindow('intrinsics calibration')
+    
+     
     for i in range(0, NUM_CAL_IMAGES):
       while True:
         raw_image = self.capture_raw()
         gray_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2GRAY)
+         
+        #max_value = 255
+        #neighborhood = 99
+        #subtract_from_mean = 30
+        #gray_image = cv2.adaptiveThreshold(gray_image,
+        #        max_value,
+        #        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        #        cv2.THRESH_BINARY,
+        #        neighborhood,
+        #        subtract_from_mean)
+        
+        #gray_image = cv2.gaussian
+        #gray_image = cv2.erode(gray_image, None, iterations=1)
 
         cv2.imshow('intrinsics calibration', gray_image)
+        #cv2.waitKey(0)
         # Find the chess boardt corners
         # If desired number of corners are
         # found in the image then ret = true
         # corners = self.find_blobs(gray_image)
-        corners = self.find_blobs(gray_image, pattern_shape)
+        #corners = self.find_blobs(gray_image, pattern_shape)
 
-        # corners = self.find_chessboard(gray_image)
+        corners = self.find_chessboard(gray_image, pattern_shape)
     
         # If desired number of corners can be detected then,
         # refine the pixel coordinates and display
@@ -140,7 +156,9 @@ class CalibratedPiCamera:
             # for given 2d points.
             corners2 = cv2.cornerSubPix(
                 gray_image, corners, (11, 11), (-1, -1), criteria)
-    
+            
+            #corners2 = corners
+
             twodpoints.append(corners2)
     
             # Draw and display the corners
@@ -204,20 +222,36 @@ class CalibratedPiCamera:
     return undist_image
 
   # Calibration function to determine camera scaling 
-  def calibrate_scale(self, object_diameter):
+  def calibrate_scale(self, object_diameter, area_criteria):
     input("Place the Scale Calibration Grid into the center of the view area. (Press Enter to continue)")
 
     cv2.namedWindow('scale calibration')
     calib_image = self.capture_calibrated()
     calib_image_gray = cv2.cvtColor(calib_image, cv2.COLOR_BGR2GRAY)
-    calib_image_gray = cv2.GaussianBlur(calib_image_gray, (7, 7), 0)
+    #calib_image_gray = cv2.GaussianBlur(calib_image_gray, (7, 7), 0)
+    
+    max_output = 255
+    subtract_from_mean = 40
+    neighborhood = 99
+    calib_image_gray = cv2.adaptiveThreshold(calib_image_gray,
+            max_output,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            neighborhood,
+            subtract_from_mean)
+            
+    cv2.imshow('scale calibration', calib_image_gray)
+    cv2.waitKey(0)
 
     edged = cv2.Canny(calib_image_gray, 50, 100)
+    cv2.imshow('scale calibration', edged)
+    cv2.waitKey(0)
+
     edged = cv2.dilate(edged, None, iterations=1)
     edged = cv2.erode(edged, None, iterations=1)
 
-    # cv2.imshow('scale calibration', edged)
-    # cv2.waitKey(0)
+    cv2.imshow('scale calibration', edged)
+    cv2.waitKey(0)
 
     cntrs = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cntrs = imutils.grab_contours(cntrs)
@@ -230,7 +264,7 @@ class CalibratedPiCamera:
 
     # TODO: Need better contour rejection criteria:
     for c in cntrs:
-      if cv2.contourArea(c) < 500:
+      if cv2.contourArea(c) < area_criteria:
         continue
 
       x,y,w,h = cv2.boundingRect(c)
@@ -259,7 +293,7 @@ class CalibratedPiCamera:
     self.pixels_per_metric_x = width_avg/object_diameter
     self.pixels_per_metric_y = height_avg/object_diameter
 
-  def calibrate(self, pattern_shape=None, cal_object_diameter=None):
+  def calibrate(self, pattern_shape=None, cal_object_diameter=None, area_criteria=None):
     if pattern_shape is None:
       x = int(input("Enter pattern shape X: "))
       y = int(input("Enter pattern shape y: "))
@@ -268,7 +302,11 @@ class CalibratedPiCamera:
     if cal_object_diameter is None:
       cal_object_diameter = float(input("Enter calibration dot diameter: "))
     self.calibrate_intrinsics(pattern_shape)
-    self.calibrate_scale(cal_object_diameter)
+
+    if area_criteria is None:
+        area_criteria = int(input("Enter the estimated dot diameter in pixels"))
+
+    self.calibrate_scale(cal_object_diameter, area_criteria)
 
   def print_calibration_data(self):
     print("\n======================")
@@ -307,13 +345,39 @@ class CalibratedPiCamera:
     cv2.waitKey(0)
 
   def find_blobs(self, image, pattern_shape):
+    blob_params = cv2.SimpleBlobDetector_Params()
+    
+    blob_params.minThreshold = 8
+    blob_params.maxThreshold = 255
+
+    blob_params.filterByArea = True
+    blob_params.minArea = 64
+    blob_params.maxArea = 3000
+
+    blob_params.filterByCircularity = True
+    blob_params.minCircularity = 0.1
+
+    blob_detector = cv2.SimpleBlobDetector_create(blob_params)
+
+    keypoints = blob_detector.detect(image)
+
+    im_with_keypoints = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    
+    #cv2.namedWindow('test')
+    cv2.imshow('intrinsics calibration', im_with_keypoints)
+
+    #cv2.waitKey(0)
+    time.sleep(1)
+
+    #image = cv2.cvtColor(im_with_keypoints, cv2.COLOR_BGR2GRAY)
+
     ret, points = cv2.findCirclesGrid(image, pattern_shape, flags=cv2.CALIB_CB_SYMMETRIC_GRID)
     if ret:
       return points
     return None
 
-  def find_chessboard(self, image):
-    ret, points = cv2.findChessboardCorners(image, CHESSBOARD_SHAPE,
+  def find_chessboard(self, image, pattern_shape):
+    ret, points = cv2.findChessboardCorners(image, pattern_shape,
                         cv2.CALIB_CB_ADAPTIVE_THRESH
                         + cv2.CALIB_CB_FAST_CHECK +
                         cv2.CALIB_CB_NORMALIZE_IMAGE)
