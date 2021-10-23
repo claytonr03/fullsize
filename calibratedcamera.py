@@ -67,7 +67,14 @@ class CalibratedPiCamera:
   # TODO: Note - temporary return raw_image
   def capture_calibrated(self):
     raw_image = self.capture_raw()
-    return raw_image
+
+    h, w = raw_image.shape[:2]
+    matrix = self.cal_data['camera_matrix']
+    distortion = self.cal_data['distortion_coefficient']
+    newcamera, roi = cv2.getOptimalNewCameraMatrix(matrix, distortion,(w, h), 1, (w,h))
+    undist_image = cv2.undistort(raw_image, matrix, distortion, None, newcamera)
+
+    return undist_image
 
   # Calibration function to determine camera intrinsics
   # TODO: Complete intrinsics calibration function 
@@ -89,15 +96,7 @@ class CalibratedPiCamera:
                           3), np.float32)
     objectp3d[0, :, :2] = np.mgrid[0:ASYMMETRIC_CIRCLES_SHAPE[0],
                                   0:ASYMMETRIC_CIRCLES_SHAPE[1]].T.reshape(-1, 2)
-    prev_img_shape = None
 
-    matrix = []
-    distortion = []
-    r_vecs = []
-    t_vecs = []
-
-    # calibrated camera intrinsic matrix
-    newcamera = []
 
     cv2.namedWindow('intrinsics calibration')
     for i in range(0, 10):
@@ -162,7 +161,7 @@ class CalibratedPiCamera:
   # cv2.waitKey(0)
 
   # TODO: save intrinsics to file 
-  def save_intrinsics():
+  def save_intrinsics(self):
     pass
 
 
