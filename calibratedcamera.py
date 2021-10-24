@@ -6,7 +6,7 @@
 
 import cv2
 import picamera
-# import picamera.array
+import picamera.array
 
 
 from imutils import perspective
@@ -35,7 +35,8 @@ class CalibratedPiCamera:
 
     # picam specific setup
     if self.type == "pi":
-      self.cam = picamera.PiCamera()
+      self.cam = picamera.PiCamera(sensor_mode=2)
+      self.cam.resolution = (2592, 1944)
 
     # webcam specific setup
     if self.type == "webcam":
