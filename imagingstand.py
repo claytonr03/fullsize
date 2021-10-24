@@ -31,8 +31,7 @@ GPIO.setmode(GPIO.BOARD)
 # ledBase.on()
 # time.sleep(.1)
 
-
-class ToolImager:
+class ImagingStand:
 
   led_base = None
   led_top = None
@@ -90,18 +89,18 @@ class ToolImager:
 if __name__ == "__main__":
 
 
-  t1 = ToolImager(17, 27, "webcam", "./camera_calibration_data_generated.json")
+  is1 = ImagingStand(17, 27, "webcam", "./camera_calibration_data_generated.json")
 
   cv2.namedWindow('Capture')
-  image = t1.capture_unlit()
+  image = is1.capture_unlit()
   cv2.imshow('Capture', image)
   cv2.waitKey(0)
 
-  image = t1.capture_top()
+  image = is1.capture_top()
   cv2.imshow('Capture', image)
   cv2.waitKey(0)
   
-  image = t1.capture_bottom()
+  image = is1.capture_bottom()
   cv2.imshow('Capture', image)
   cv2.waitKey(0)
   
