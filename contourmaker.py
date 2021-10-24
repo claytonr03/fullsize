@@ -6,6 +6,8 @@ import os
 import email, smtplib, ssl
 import sys
 
+import argparse
+
 from imagingstand import ImagingStand
 
 from email import encoders
@@ -21,7 +23,7 @@ class ContourMaker:
   imager = None
 
   def __init__(self):
-    self.imager = ImagingStand(17, 27, "webcam", "./camera_calibration_data_generated.json")
+    self.imager = ImagingStand(17, 27,"pi", "./camera_calibration_data_generated.json")
 
 
   def auto_canny(self, image, sigma=0.33):
@@ -43,34 +45,18 @@ class ContourMaker:
     # -------------------------
     # Capture Top Image
     # -------------------------
-    frame = self.imager.capture_top()
-    scale_percentx = 69.5
-    scale_percenty = 69.5
-    width = int(frame.shape[1] * scale_percentx / 100)
-    height = int(frame.shape[0] * scale_percenty / 100)
-    dsize = (width, height)
-    frame = cv2.resize(frame, dsize)
-    #Y is first with Yo and Y distance
-    #frameT = frame[400:2600, 1000:3300]
-    # frameT = frame[120:4000, 550:3500]
-
-    cv2.imshow('generate_contour_svg', frame)
-    cv2.waitKey(0)
+    frameT = self.imager.capture_top()
+    
+    #cv2.imshow('generate_contour_svg', frame)
+    #cv2.waitKey(0)
     
     # ------------------------
     # Capture Bottom Image
     # ------------------------
     frame = self.imager.capture_bottom()
-    #scale_percentx = 69.5
-    #scale_percenty = 69.5
-    width = int(frame.shape[1] * scale_percentx / 100)
-    height = int(frame.shape[0] * scale_percenty / 100)
-    dsize = (width, height)
-    #frame = cv2.resize(frame, ds)ize)
-    # frame = frame[120:4000, 550:3500]
-    
-    cv2.imshow('generate_contour_svg', frame)
-    cv2.waitKey(0)
+    print(frame.shape)         
+    #cv2.imshow('generate_contour_svg', frame)
+    #cv2.waitKey(0)
 
     # ------------------------
     # Generate Contours
@@ -83,13 +69,13 @@ class ContourMaker:
     #cv2.namedWindow("test",cv2.WND_PROP_FULLSCREEN)
     #cv2.setWindowProperty("test",cv2.WND_PROP_FULLSCREEN,cv2.CV_WINDOW_FULLSCREEN)
 
-    thresh = cv2.erode(thresh, None, iterations=5)#4
-    thresh = cv2.dilate(thresh, None, iterations=1)#4
+    #thresh = cv2.erode(thresh, None, iterations=5)#4
+    #thresh = cv2.dilate(thresh, None, iterations=1)#4
     cv2.imshow('generate_contour_svg', thresh)
     cv2.waitKey(0)
 
-    blurred = cv2.GaussianBlur(thresh, (3, 3), 0)
-    edged = cv2.Canny(thresh, 50, 130)
+    #blurred = cv2.GaussianBlur(thresh, (3, 3), 0)
+    #edged = cv2.Canny(thresh, 50, 130)
     edged = cm1.auto_canny(thresh)
 
     cv2.imshow('generate_contour_svg', edged)
@@ -99,6 +85,11 @@ class ContourMaker:
       cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     
+    #edged_contours = frame.copy()
+    #cv2.drawContours(edged_contours, cnts, -1, (0, 255, 0), 2)
+    #cv2.imshow('generate_contour_svg', edged_contours)
+    #cv2.waitKey(0)
+
     # ------------------------
     # Generate SVG
     # ------------------------
@@ -108,7 +99,7 @@ class ContourMaker:
 
     c = max(cnts, key=cv2.contourArea) #max contour
     f = open(filepath+'/'+toolnumber+'_'+timestr+'_vectors.svg', 'w+')
-    f.write('<svg width="4000" height="4000" xmlns="http://www.w3.org/2000/svg">')
+    f.write('<svg width="2594" height="1944" xmlns="http://www.w3.org/2000/svg">')
     # loop over the contours one by one
     for c in cnts:
       if cv2.contourArea(c) < 500:	#or cv2.contourArea(c) > 200:
@@ -137,8 +128,14 @@ class ContourMaker:
 
 
 if __name__ == "__main__":
-  cm1 = ContourMaker()
-  cm1.generate_contour_svg("./", "1")
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-c", "--calibrate", action='store_true')
+  args = parser.parse_args()
+  cm1 = ContourMaker() 
+  if args.calibrate:
+    cm1.imager.run_calibration()
+  else:
+    cm1.generate_contour_svg("./", "1")
 
 exit(1)
 
@@ -202,13 +199,13 @@ thresh = cv2.threshold(fgGray, 0, 255,
 #cv2.namedWindow("test",cv2.WND_PROP_FULLSCREEN)
 #cv2.setWindowProperty("test",cv2.WND_PROP_FULLSCREEN,cv2.CV_WINDOW_FULLSCREEN)
 
-thresh = cv2.erode(thresh, None, iterations=5)#4
+#thresh = cv2.erode(thresh, None, iterations=5)#4
 thresh = cv2.dilate(thresh, None, iterations=1)#4
 cv2.imshow("test2", thresh)
 cv2.waitKey(0)
 
-blurred = cv2.GaussianBlur(thresh, (3, 3), 0)
-edged = cv2.Canny(thresh, 50, 130)
+#blurred = cv2.GaussianBlur(thresh, (3, 3), 0)
+#edged = cv2.Canny(thresh, 50, 130)
 edged = cm1.auto_canny(thresh)
 
 cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
