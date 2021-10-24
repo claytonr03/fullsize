@@ -1,10 +1,10 @@
 
 # For x86 development:
-import sys
-import fake_rpi
-sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi
-sys.modules['picamera'] = fake_rpi.picamera # Fake picamera
-sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
+#import sys
+#import fake_rpi
+#sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi
+#sys.modules['picamera'] = fake_rpi.picamera # Fake picamera
+#sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
 
 
 
@@ -20,8 +20,8 @@ import json
 image_directory = '/home/pi/Documents/captures'
 
 import RPi.GPIO as GPIO
-GPIO.setmode(GPIO.BOARD)
-
+#GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
 # ledBase = LED(27)
 # ledTop = LED(17)
 # ledBase.off()
@@ -80,7 +80,7 @@ class ImagingStand:
     # GPIO are inverted
     self.set_led(self.led_base, 0)
     image = self.cam.capture_calibrated()
-    self.set_led(self.led_base, 0)
+    self.set_led(self.led_base, 1)
     return image
 
 
