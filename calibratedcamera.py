@@ -62,8 +62,7 @@ class CalibratedPiCamera:
     
     return None
 
-  # Capture and return calibrated image
-  # TODO: Note - temporary return raw_image
+  # Capture and return calibrated image cropped to the ROI
   def capture_calibrated(self):
     raw_image = self.capture_raw()
 
@@ -74,6 +73,9 @@ class CalibratedPiCamera:
     undist_image = cv2.undistort(raw_image, matrix, distortion, None, newcamera)
     
     print("ROI: {}".format(roi))
+
+    x, y, w, h = roi
+    undist_image = undist_image[y:y+h, x:x+w]
 
     return undist_image
 
