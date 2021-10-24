@@ -4,6 +4,7 @@ import sys
 import fake_rpi
 sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi
 sys.modules['picamera'] = fake_rpi.picamera # Fake picamera
+sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
 
 
 
@@ -18,7 +19,8 @@ import json
 
 image_directory = '/home/pi/Documents/captures'
 
-
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BOARD)
 
 # ledBase = LED(27)
 # ledTop = LED(17)
@@ -30,21 +32,95 @@ image_directory = '/home/pi/Documents/captures'
 # time.sleep(.1)
 
 
+class ToolImager:
+
+  led_base = None
+  led_top = None
+  cam = None
+
+  def __init__(self, led_top_pin, led_base_pin, camera_type="pi", calibration_file=None):
+    self.led_top = led_top_pin
+    self.led_base = led_base_pin
+    self.init_gpio()
+
+    # GPIO are inverted
+    # TODO: fix inversion
+    self.set_led(self.led_top, 1)
+    self.set_led(self.led_base, 1)
+
+    # Initialize camera:
+    self.cam = CalibratedPiCamera(camera_type, calibration_file)
+
+
+  def init_gpio(self):
+    GPIO.setup(self.led_top, GPIO.OUT)
+    GPIO.setup(self.led_base, GPIO.OUT)
+
+  def set_led(self, led, value):
+    GPIO.output(led, value)
+  
+  def capture_unlit(self):
+    self.set_led(self.led_top, 1)
+    self.set_led(self.led_base, 1)
+    return self.cam.capture_calibrated()
+
+  def run_calibration(self):
+    # GPIO are inverted
+    self.set_led(self.led_top, 0)
+    self.cam.calibrate()
+    self.set_led(self.led_top, 1)
+
+  def capture_top(self):
+    # GPIO are inverted
+    self.set_led(self.led_top, 0)
+    image = self.cam.capture_calibrated()
+    self.set_led(self.led_top, 1)
+    return image
+
+  def capture_bottom(self):
+    # GPIO are inverted
+    self.set_led(self.led_base, 0)
+    image = self.cam.capture_calibrated()
+    self.set_led(self.led_base, 0)
+    return image
+
+
+
+
 if __name__ == "__main__":
-  c1 = CalibratedPiCamera("webcam", "./camera_calibration_data.json")
-  # c1.display_raw_capture()
-  # c1.display_blobs()
-  c1.circle_scale_calibration(24.257)
 
 
-  # c2 = CalibratedPiCamera("pi", "./camera_calibration_data.json")
-	
-  # cv2.namedWindow("Raw Image")
-  # cv2.namedWindow("Corrected Image")
-  # raw_image = cv2.imread("./sample_image.jpg")
-  # corrected_image = correct_image("./camera_calibration_data.json", "./sample_image.jpg")
-  # cv2.imshow("Raw Image", raw_image)
-  # cv2.imshow("Corrected Image", corrected_image)
+  t1 = ToolImager(17, 27, "webcam", "./camera_calibration_data_generated.json")
+
+  cv2.namedWindow('Capture')
+  image = t1.capture_unlit()
+  cv2.imshow('Capture', image)
+  cv2.waitKey(0)
+
+  image = t1.capture_top()
+  cv2.imshow('Capture', image)
+  cv2.waitKey(0)
+  
+  image = t1.capture_bottom()
+  cv2.imshow('Capture', image)
+  cv2.waitKey(0)
+  
+  
+  
+  # c1 = CalibratedPiCamera("webcam", "./camera_calibration_data.json")
+  # # c1.calibrate()
+  # c1.load_calibration_file("./camera_calibration_data_generated.json")
+  # c1.print_calibration_data()
+
+  # cv2.namedWindow('Raw Capture')
+  # image_raw = c1.capture_raw()
+  # cv2.imshow('Raw Capture', image_raw)
+
+  # cv2.namedWindow('Calibrated Capture')
+  # image = c1.capture_calibrated()
+  # cv2.imshow('Calibrated Capture', image)
+
+  # cv2.waitKey(0)
 
   # ledTop.off()
 	# #print("Top On before photo")
