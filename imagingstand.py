@@ -83,6 +83,9 @@ class ImagingStand:
     self.set_led(self.led_base, 1)
     return image
 
+  def get_pixel_metrics(self):
+    return self.cam.get_pixel_metrics()
+
 
 
 

@@ -54,6 +54,7 @@ class ContourMaker:
     # Capture Bottom Image
     # ------------------------
     frame = self.imager.capture_bottom()
+    (roi_y, roi_x, _) = frame.shape
     print(frame.shape)         
     #cv2.imshow('generate_contour_svg', frame)
     #cv2.waitKey(0)
@@ -96,10 +97,12 @@ class ContourMaker:
     total = 0
     timestr = time.strftime("%Y%m%d-%H%M%S")
     #print(timestr)
-
+    (x_metric, y_metric) = self.imager.get_pixel_metrics()
+    x_size = roi_x * x_metric
+    y_size = roi_y * y_metric
     c = max(cnts, key=cv2.contourArea) #max contour
     f = open(filepath+'/'+toolnumber+'_'+timestr+'_vectors.svg', 'w+')
-    f.write('<svg width="2594" height="1944" xmlns="http://www.w3.org/2000/svg">')
+    f.write('<svg width="{}mm" height="{}mm" xmlns="http://www.w3.org/2000/svg">'.format(x_size, y_size))
     # loop over the contours one by one
     for c in cnts:
       if cv2.contourArea(c) < 500:	#or cv2.contourArea(c) > 200:
@@ -116,8 +119,12 @@ class ContourMaker:
       for i in range(len(c)):
         if i == 0:
           x1, y1 = c[i][0]
+          x1 = x1 * x_metric
+          y1 = y1 * y_metric
         #print(c[i][0])
         x, y = c[i][0]
+        x = x * x_metric
+        y = y * y_metric
         #print(x)
         f.write(str(x)+  ' ' + str(y)+' ')
       f.write(str(x1)+  ' ' + str(y1)+' ')
