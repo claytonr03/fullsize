@@ -76,7 +76,10 @@ class CalibratedPiCamera:
     print("ROI: {}".format(roi))
 
     x, y, w, h = roi
-    undist_image = undist_image[y:y+h, x:x+w]
+    # hacky workaround to remove edges until proper calibration ROI method is implemented
+    margin_x = int(.1 * w)
+    margin_y = int(.1 * h)
+    undist_image = undist_image[y+margin_y:y+h-margin_y, x+margin_x:x+w-margin_x]
 
     return undist_image
 
@@ -148,13 +151,17 @@ class CalibratedPiCamera:
                                               pattern_shape,
                                               corners2, True)
 
-
-            cv2.imshow('intrinsics calibration', drawn_image)
+            drawn_image_preview = drawn_image.copy()
+            drawn_image_preview = cv2.resize(drawn_image_preview, (800, 600))
+            cv2.imshow('intrinsics calibration', drawn_image_preview)
             break
 
         else:
           print("Could not find calibration pattern, please re-align and press any key to retry")
-          cv2.imshow('intrinsics calibration', gray_image)
+         
+          gray_image_preview = gray_image.copy()
+          gray_image_preview = cv2.resize(gray_image_preview, (800, 600))
+          cv2.imshow('intrinsics calibration', gray_image_preview)
           cv2.waitKey(0) 
         
       cv2.waitKey(0)  
@@ -203,6 +210,7 @@ class CalibratedPiCamera:
     cv2.namedWindow('scale calibration')
     calib_image = self.capture_calibrated()
     calib_image_gray = cv2.cvtColor(calib_image, cv2.COLOR_BGR2GRAY)
+
     #calib_image_gray = cv2.GaussianBlur(calib_image_gray, (7, 7), 0)
     
     max_output = 255
@@ -215,18 +223,18 @@ class CalibratedPiCamera:
             neighborhood,
             subtract_from_mean)
             
-    cv2.imshow('scale calibration', calib_image_gray)
-    cv2.waitKey(0)
+    #cv2.imshow('scale calibration', calib_image_gray)
+    #cv2.waitKey(0)
 
     edged = cv2.Canny(calib_image_gray, 50, 100)
-    cv2.imshow('scale calibration', edged)
-    cv2.waitKey(0)
+    #cv2.imshow('scale calibration', edged)
+    #cv2.waitKey(0)
 
     edged = cv2.dilate(edged, None, iterations=1)
     edged = cv2.erode(edged, None, iterations=1)
 
-    cv2.imshow('scale calibration', edged)
-    cv2.waitKey(0)
+    #cv2.imshow('scale calibration', edged)
+    #cv2.waitKey(0)
 
     cntrs = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cntrs = imutils.grab_contours(cntrs)
@@ -245,12 +253,13 @@ class CalibratedPiCamera:
       x,y,w,h = cv2.boundingRect(c)
       total_pixel_width += w
       total_pixel_height += h
-      drawn_image = cv2.rectangle(drawn_image, (x,y), (x+w, y+h), (0,255,0), 1)
+      drawn_image = cv2.rectangle(drawn_image, (x,y), (x+w, y+h), (0,255,0), 15)
 
-      
+      drawn_image_preview = drawn_image.copy()
+      drawn_image_preview = cv2.resize(drawn_image_preview, (640, 480))
       count += 1
 
-    cv2.imshow('scale calibration', drawn_image)
+    cv2.imshow('scale calibration', drawn_image_preview)
     cv2.waitKey(0)
 
     # Note: Do the rotation values of the box potentially impact the calibration accuracy?
@@ -285,6 +294,9 @@ class CalibratedPiCamera:
     self.calibrate_intrinsics(pattern_shape)
     self.calibrate_scale(cal_object_diameter, area_criteria)
     self.save_intrinsics()
+    
+  def get_pixel_metrics(self):
+      return(self.cal_data['pixels_per_metric'])
 
   def print_calibration_data(self):
     print("\n======================")
