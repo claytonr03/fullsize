@@ -1,10 +1,10 @@
 
 # For x86 development:
-#import sys
-#import fake_rpi
-#sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi
-#sys.modules['picamera'] = fake_rpi.picamera # Fake picamera
-#sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
+import sys
+import fake_rpi
+sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi
+sys.modules['picamera'] = fake_rpi.picamera # Fake picamera
+sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
 
 
 
@@ -14,10 +14,6 @@ import numpy as np
 import os
 import time
 import json
-
-# from gpiozero import LED
-
-image_directory = '/home/pi/Documents/captures'
 
 import RPi.GPIO as GPIO
 #GPIO.setmode(GPIO.BOARD)
@@ -36,6 +32,7 @@ class ImagingStand:
   led_base = None
   led_top = None
   cam = None
+  display_size = (640, 480)
 
   def __init__(self, led_top_pin, led_base_pin, camera_type="pi", calibration_file=None):
     self.led_top = led_top_pin
@@ -63,7 +60,7 @@ class ImagingStand:
     self.set_led(self.led_base, 1)
     return self.cam.capture_calibrated()
 
-  def run_calibration(self):
+  def calibrate_all(self):
     # GPIO are inverted
     self.set_led(self.led_top, 0)
     self.cam.calibrate()

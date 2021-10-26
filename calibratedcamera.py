@@ -6,7 +6,7 @@
 
 import cv2
 import picamera
-import picamera.array
+# import picamera.array
 
 
 from imutils import perspective
@@ -25,6 +25,7 @@ class CalibratedPiCamera:
   type = "none"
   cam = None
   cal_data = {}
+  display_size = (640, 480)
   num_cal_images = 12
 
   def __init__(self, type, calibration_filepath=None):
@@ -152,7 +153,7 @@ class CalibratedPiCamera:
                                               corners2, True)
 
             drawn_image_preview = drawn_image.copy()
-            drawn_image_preview = cv2.resize(drawn_image_preview, (800, 600))
+            drawn_image_preview = cv2.resize(drawn_image_preview, self.display_size)
             cv2.imshow('intrinsics calibration', drawn_image_preview)
             break
 
@@ -160,7 +161,7 @@ class CalibratedPiCamera:
           print("Could not find calibration pattern, please re-align and press any key to retry")
          
           gray_image_preview = gray_image.copy()
-          gray_image_preview = cv2.resize(gray_image_preview, (800, 600))
+          gray_image_preview = cv2.resize(gray_image_preview, self.display_size)
           cv2.imshow('intrinsics calibration', gray_image_preview)
           cv2.waitKey(0) 
         
@@ -256,7 +257,7 @@ class CalibratedPiCamera:
       drawn_image = cv2.rectangle(drawn_image, (x,y), (x+w, y+h), (0,255,0), 15)
 
       drawn_image_preview = drawn_image.copy()
-      drawn_image_preview = cv2.resize(drawn_image_preview, (640, 480))
+      drawn_image_preview = cv2.resize(drawn_image_preview, self.display_size)
       count += 1
 
     cv2.imshow('scale calibration', drawn_image_preview)

@@ -23,8 +23,8 @@ class ContourMaker:
   imager = None
 
   def __init__(self):
-    self.imager = ImagingStand(17, 27,"pi", "./camera_calibration_data_generated.json")
-
+    # self.imager = ImagingStand(17, 27, "pi", "./camera_calibration_data_generated.json")
+    self.imager = ImagingStand(17, 27, "webcam", "./camera_calibration_data_generated.json")
 
   def auto_canny(self, image, sigma=0.33):
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
   cm1 = ContourMaker() 
   if args.calibrate:
-    cm1.imager.run_calibration()
+    cm1.imager.calibrate_all()
   else:
     cm1.generate_contour_svg("./", "1")
 
