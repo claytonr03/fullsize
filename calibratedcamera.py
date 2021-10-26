@@ -175,7 +175,7 @@ class CalibratedPiCamera:
     return undist_image
 
   # Calibration function to determine camera scaling 
-  def calibrate_scale(self, object_diameter):
+  def calibrate_scale(self, object_diameter, object_units):
     input("Place the Scale Calibration Grid into the center of the view area. (Press Enter to continue)")
 
     cv2.namedWindow('scale calibration')
@@ -250,8 +250,9 @@ class CalibratedPiCamera:
     pixels_per_metric_x = width_avg/object_diameter
     pixels_per_metric_y = height_avg/object_diameter
     self.cal_data['pixels_per_metric'] = [pixels_per_metric_x, pixels_per_metric_y]
+    self.cal_data['pixels_per_metric_units'] = object_units
 
-  def calibrate(self, pattern_shape=None, cal_object_diameter=None, area_criteria=None):
+  def calibrate(self, pattern_shape=None, cal_object_diameter=None, cal_object_units=None):
     if pattern_shape is None:
       x = int(input("Enter pattern shape X: "))
       y = int(input("Enter pattern shape Y: "))
@@ -259,14 +260,16 @@ class CalibratedPiCamera:
 
     if cal_object_diameter is None:
       cal_object_diameter = float(input("Enter calibration dot diameter: "))
+    if cal_object_units is None:
+      cal_object_units = input("Enter calibration dot measurement units (in/mm): ")
 
     # Calibration routines:
     self.calibrate_intrinsics(pattern_shape)
-    self.calibrate_scale(cal_object_diameter)
+    self.calibrate_scale(cal_object_diameter, cal_object_units)
     self.save_intrinsics()
     
   def get_pixel_metrics(self):
-      return(self.cal_data['pixels_per_metric'])
+      return(self.cal_data['pixels_per_metric'], self.cal_data['pixels_per_metric_units'])
 
   def print_calibration_data(self):
     print("\n======================")
