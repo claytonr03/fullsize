@@ -20,6 +20,8 @@ import json
 
 import time
 
+PI = 3.14159
+
 class CalibratedPiCamera:
   scale = (1, 1)
   type = "none"
@@ -65,7 +67,7 @@ class CalibratedPiCamera:
     return None
 
   # Capture and return calibrated image cropped to the ROI
-  def capture_calibrated(self):
+  def capture_calibrated(self, crop=False):
     raw_image = self.capture_raw()
 
     h, w = raw_image.shape[:2]
@@ -111,25 +113,6 @@ class CalibratedPiCamera:
       while True:
         raw_image = self.capture_raw()
         gray_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2GRAY)
-         
-        #max_value = 255
-        #neighborhood = 99
-        #subtract_from_mean = 30
-        #gray_image = cv2.adaptiveThreshold(gray_image,
-        #        max_value,
-        #        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        #        cv2.THRESH_BINARY,
-        #        neighborhood,
-        #        subtract_from_mean)
-        
-        #gray_image = cv2.gaussian
-        #gray_image = cv2.erode(gray_image, None, iterations=1)
-
-        # Find the chess board corners
-        # If desired number of corners are
-        # found in the image then ret = true
-        # corners = self.find_blobs(gray_image)
-        #corners = self.find_blobs(gray_image, pattern_shape)
 
         corners = self.find_chessboard(gray_image, pattern_shape)
     
@@ -180,19 +163,6 @@ class CalibratedPiCamera:
     self.cal_data['distortion_coefficient'] = distortion.tolist()
     cv2.destroyWindow('intrinsics calibration')
 
-
-  # raw_image = self.capture_raw()
-  # cv2.namedWindow('intrinsics calibration')
-  # blobs = self.find_blobs(raw_image)
-  # # print(blobs)
-  # if blobs.any():
-  #   drawn_image = cv2.drawChessboardCorners(raw_image, ASYMMETRIC_CIRCLES_SHAPE, blobs, True)
-  #   cv2.imshow('intrinsics calibration', drawn_image)
-  # else:
-  #   cv2.imshow('intrinsics calibration', raw_image)
-  # cv2.waitKey(0)
-
-  # TODO: save intrinsics to file 
   def save_intrinsics(self):
     with open("camera_calibration_data_generated.json", 'w') as f:
       json.dump(self.cal_data, f)
@@ -250,6 +220,11 @@ class CalibratedPiCamera:
     for c in cntrs:
       if cv2.contourArea(c) < area_criteria:
         continue
+      
+      # If not a circle, skip:
+      circularity = 4 * PI * cv2.contourArea(c) / (cv2.arcLength(c, True) ** 2)
+      if circularity < 0.8:
+        continue
 
       x,y,w,h = cv2.boundingRect(c)
       total_pixel_width += w
@@ -280,10 +255,10 @@ class CalibratedPiCamera:
     self.cal_data['pixels_per_metric'] = [pixels_per_metric_x, pixels_per_metric_y]
 
   def calibrate(self, pattern_shape=None, cal_object_diameter=None, area_criteria=None):
-    if pattern_shape is None:
-      x = int(input("Enter pattern shape X: "))
-      y = int(input("Enter pattern shape y: "))
-      pattern_shape = (x,y)
+    # if pattern_shape is None:
+    #   x = int(input("Enter pattern shape X: "))
+    #   y = int(input("Enter pattern shape y: "))
+    #   pattern_shape = (x,y)
 
     if cal_object_diameter is None:
       cal_object_diameter = float(input("Enter calibration dot diameter: "))
@@ -292,7 +267,7 @@ class CalibratedPiCamera:
         area_criteria = int(input("Enter the estimated dot diameter in pixels: "))
 
     # Calibration routines:
-    self.calibrate_intrinsics(pattern_shape)
+    # self.calibrate_intrinsics(pattern_shape)
     self.calibrate_scale(cal_object_diameter, area_criteria)
     self.save_intrinsics()
     
