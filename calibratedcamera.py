@@ -175,7 +175,7 @@ class CalibratedPiCamera:
     return undist_image
 
   # Calibration function to determine camera scaling 
-  def calibrate_scale(self, object_diameter, area_criteria):
+  def calibrate_scale(self, object_diameter):
     input("Place the Scale Calibration Grid into the center of the view area. (Press Enter to continue)")
 
     cv2.namedWindow('scale calibration')
@@ -218,9 +218,6 @@ class CalibratedPiCamera:
 
     # TODO: Need better contour rejection criteria:
     for c in cntrs:
-      if cv2.contourArea(c) < area_criteria:
-        continue
-      
       # If not a circle, skip:
       circularity = 4 * PI * cv2.contourArea(c) / (cv2.arcLength(c, True) ** 2)
       if circularity < 0.8:
@@ -255,20 +252,17 @@ class CalibratedPiCamera:
     self.cal_data['pixels_per_metric'] = [pixels_per_metric_x, pixels_per_metric_y]
 
   def calibrate(self, pattern_shape=None, cal_object_diameter=None, area_criteria=None):
-    # if pattern_shape is None:
-    #   x = int(input("Enter pattern shape X: "))
-    #   y = int(input("Enter pattern shape y: "))
-    #   pattern_shape = (x,y)
+    if pattern_shape is None:
+      x = int(input("Enter pattern shape X: "))
+      y = int(input("Enter pattern shape Y: "))
+      pattern_shape = (x,y)
 
     if cal_object_diameter is None:
       cal_object_diameter = float(input("Enter calibration dot diameter: "))
 
-    if area_criteria is None:
-        area_criteria = int(input("Enter the estimated dot diameter in pixels: "))
-
     # Calibration routines:
-    # self.calibrate_intrinsics(pattern_shape)
-    self.calibrate_scale(cal_object_diameter, area_criteria)
+    self.calibrate_intrinsics(pattern_shape)
+    self.calibrate_scale(cal_object_diameter)
     self.save_intrinsics()
     
   def get_pixel_metrics(self):
