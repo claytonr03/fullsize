@@ -66,6 +66,14 @@ class ImagingStand:
     self.cam.calibrate()
     self.set_led(self.led_top, 1)
 
+  def calibrate_intrinsics(self):
+    x = int(input("Enter pattern shape X: "))
+    y = int(input("Enter pattern shape Y: "))
+    pattern_shape = (x,y)
+    self.set_led(self.led_top, 0)
+    self.cam.calibrate_intrinsics(pattern_shape)
+    self.set_led(self.led_top, 1)
+
   def calibrate_scale(self):
     cal_object_diameter = float(input("Enter calibration dot diameter: "))
     cal_object_units = input("Enter calibration dot measurement units (in/mm): ")
