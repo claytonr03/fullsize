@@ -1,10 +1,10 @@
 
 # For x86 development:
-import sys
-import fake_rpi
-sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi
-sys.modules['picamera'] = fake_rpi.picamera # Fake picamera
-sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
+# import sys
+# import fake_rpi
+# sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi
+# sys.modules['picamera'] = fake_rpi.picamera # Fake picamera
+# sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
 
 
 

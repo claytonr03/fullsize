@@ -6,7 +6,7 @@
 
 import cv2
 import picamera
-# import picamera.array
+import picamera.array
 
 
 from imutils import perspective
