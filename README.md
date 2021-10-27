@@ -57,11 +57,11 @@ It is important to measure the size of the dots as printer scaling may have an i
 
 During the dimensional scaling calibration, you will be prompted to enter the size of the calibration dots you previously measured. Enter the numerical value, and then when prompted enter the units used during measurement (in/mm).
 
-![Scale Calibration Entry](doc/images/scale_calibration_entry.png)
+![Scale Calibration Entry](docs/images/scale_calibration_entry.png)
 
 You will be prompted to place the calibration dot pattern directly under the camera, and press enter. If the calibration program has successfully captured the dots you should see the following:
 
-![Identified Scale Calibration](doc/images/scale_calibration_recognized.png)
+![Identified Scale Calibration](docs/images/scale_calibration_recognized.png)
 
 You may now press enter to dismiss the image and complete scale calibration.
 
