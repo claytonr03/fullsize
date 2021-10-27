@@ -3,6 +3,7 @@
 # Integrate returned scaled images with svg code
 
 
+from os.path import exists
 
 import cv2
 import picamera
@@ -46,8 +47,9 @@ class CalibratedPiCamera:
       self.cam = cv2.VideoCapture(0)
 
   def load_calibration_file(self, calibration_filepath):
-    with open(calibration_filepath) as cal_f:
-      self.cal_data = dict(json.load(cal_f).items())
+    if exists(calibration_filepath):
+      with open(calibration_filepath) as cal_f:
+        self.cal_data = dict(json.load(cal_f).items())
 
   # Capture and return uncalibrated image
   def capture_raw(self):
