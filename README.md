@@ -16,7 +16,7 @@ Once calibration is complete, the calibration data will be written to file for f
 The following sections describe how to perform the calibration, as well as how to run each calibration routine individually.
 
 #### **Camera Intrinsics**
-To calibrate camera intrinsics independently (image distortion correction), run:
+To calibrate camera intrinsics (image distortion correction) independently, run:
 
 `contourmaker --calibrate int`
 
