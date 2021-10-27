@@ -22,11 +22,15 @@ To calibrate camera intrinsics (image distortion correction) independently, run:
 
 During the Camera Intrinsics calibration, use the checkerboard calibration pattern located in:
 
-`doc/calibration/intrinsics.pdf`
+`doc/calibration/intrinsics.png`
 
-The calibration routine will capture 12 images, it's recommended to place the checkerboard on the imaging surface in the following pattern:
+This pattern is taken from https://github.com/opencv/opencv/blob/master/doc/pattern.png
 
-PATTERN IMAGE
+The calibration routine will ask the user what the dimensions of the calibration grid are. This is the dimensions in X and Y of the internal corners of the chessboard pattern. For the above grid, the pattern is 9x6.
+
+The calibration routine will capture 12 images. It's recommended to place the checkerboard on the imaging surface in the following pattern:
+
+![Identified Checkerboard](docs/images/placement_pattern.png)
 
 It's not necessary to be exact, but it is important to cover as much area as possible - especially around the edges (do not take images only in the center).
 
@@ -51,7 +55,9 @@ To calibrate dimensional scaling independently, run:
 
 A calibration dot file has been provided in:
 
-`doc/calibration/scale.pdf`
+`doc/calibration/scale.png`
+
+This pattern is taken from https://github.com/opencv/opencv/blob/master/doc/acircles_pattern.png
 
 It is important to measure the size of the dots as printer scaling may have an impact on the real-world dot size.
 
