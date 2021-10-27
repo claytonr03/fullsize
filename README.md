@@ -7,7 +7,7 @@ Prior to running the Contour Maker application for the first time, or after adju
 
 To calibrate everything, run:
 
-`contourmaker --calibrate all`
+`./contourmaker --calibrate all`
 
 This will run the calibration routines for both the camera intrinsics as well as dimensional scaling.
 
@@ -18,7 +18,7 @@ The following sections describe how to perform the calibration, as well as how t
 #### **Camera Intrinsics**
 To calibrate camera intrinsics (image distortion correction) independently, run:
 
-`contourmaker --calibrate int`
+`./contourmaker --calibrate int`
 
 During the Camera Intrinsics calibration, use the checkerboard calibration pattern located in:
 
@@ -47,7 +47,7 @@ After all 12 images have been captured, pressing enter will exit the intrinsics 
 #### **Dimensional Scaling**
 To calibrate dimensional scaling independently, run:
 
-`contourmaker --calibrate scale`
+`./contourmaker --calibrate scale`
 
 A calibration dot file has been provided in:
 
@@ -68,7 +68,7 @@ You may now press enter to dismiss the image and complete scale calibration.
 ### **Capturing a Contour File**
 To capture a contour file, place the desired objects into the imaging stand and run the following:
 
-`contourmaker`
+`./contourmaker`
 
 This will generate an output SVG file in the application directory which may be imported into a CAM application.
 
