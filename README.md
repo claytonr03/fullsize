@@ -26,6 +26,8 @@ During the Camera Intrinsics calibration, use the checkerboard calibration patte
 
 This pattern is taken from https://github.com/opencv/opencv/blob/master/doc/pattern.png
 
+The calibration routine will ask the user what the dimensions of the calibration grid are. This is the dimensions in X and Y of the internal corners of the chessboard pattern. For the above grid, the pattern is 9x6.
+
 The calibration routine will capture 12 images. It's recommended to place the checkerboard on the imaging surface in the following pattern:
 
 ![Identified Checkerboard](docs/images/placement_pattern.png)
