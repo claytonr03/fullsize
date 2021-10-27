@@ -32,11 +32,11 @@ It's not necessary to be exact, but it is important to cover as much area as pos
 
 If the application has successfully detected the checkerboard calibration pattern, you should see the inner corners of the checkerboard highlighted like so:
 
-CHECKERBOARD IDENTIFIED IMAGE
+[Identified Checkerboard](docs/images/checkerboard_recognized.png)
 
 If the checkerboard calibration pattern is not identified, you should see an image with the highlighting absent:
 
-CHECKERBOARD MISSED IMAGE
+[Missed Checkerboard](docs/images/checkerboard_unrecognized.png)
 
 After each image, you can press any key to either:
 - Retry an image if a checkerboard has been missed (after moving the pattern slightly)
@@ -57,9 +57,11 @@ It is important to measure the size of the dots as printer scaling may have an i
 
 During the dimensional scaling calibration, you will be prompted to enter the size of the calibration dots you previously measured. Enter the numerical value, and then when prompted enter the units used during measurement (in/mm).
 
+[Scale Calibration Entry](doc/images/scale_calibration_entry.png)
+
 You will be prompted to place the calibration dot pattern directly under the camera, and press enter. If the calibration program has successfully captured the dots you should see the following:
 
-SCALE CALIBRATION IMAGE
+[Identified Scale Calibration](doc/images/scale_calibration_recognized.png)
 
 You may now press enter to dismiss the image and complete scale calibration.
 
