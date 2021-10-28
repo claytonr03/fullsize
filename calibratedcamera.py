@@ -179,61 +179,65 @@ class CalibratedPiCamera:
   # Calibration function to determine camera scaling 
   def calibrate_scale(self, object_diameter, object_units):
     input("Place the Scale Calibration Grid into the center of the view area. (Press Enter to continue)")
+    while True:
+      cv2.namedWindow('scale calibration')
+      calib_image = self.capture_calibrated()
+      calib_image_gray = cv2.cvtColor(calib_image, cv2.COLOR_BGR2GRAY)
 
-    cv2.namedWindow('scale calibration')
-    calib_image = self.capture_calibrated()
-    calib_image_gray = cv2.cvtColor(calib_image, cv2.COLOR_BGR2GRAY)
+      #calib_image_gray = cv2.GaussianBlur(calib_image_gray, (7, 7), 0)
+      
+      max_output = 255
+      subtract_from_mean = 40
+      neighborhood = 99
+      calib_image_gray = cv2.adaptiveThreshold(calib_image_gray,
+              max_output,
+              cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+              cv2.THRESH_BINARY,
+              neighborhood,
+              subtract_from_mean)
+              
+      #cv2.imshow('scale calibration', calib_image_gray)
+      #cv2.waitKey(0)
 
-    #calib_image_gray = cv2.GaussianBlur(calib_image_gray, (7, 7), 0)
-    
-    max_output = 255
-    subtract_from_mean = 40
-    neighborhood = 99
-    calib_image_gray = cv2.adaptiveThreshold(calib_image_gray,
-            max_output,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY,
-            neighborhood,
-            subtract_from_mean)
-            
-    #cv2.imshow('scale calibration', calib_image_gray)
-    #cv2.waitKey(0)
+      edged = cv2.Canny(calib_image_gray, 50, 100)
+      #cv2.imshow('scale calibration', edged)
+      #cv2.waitKey(0)
 
-    edged = cv2.Canny(calib_image_gray, 50, 100)
-    #cv2.imshow('scale calibration', edged)
-    #cv2.waitKey(0)
+      edged = cv2.dilate(edged, None, iterations=1)
+      edged = cv2.erode(edged, None, iterations=1)
 
-    edged = cv2.dilate(edged, None, iterations=1)
-    edged = cv2.erode(edged, None, iterations=1)
+      #cv2.imshow('scale calibration', edged)
+      #cv2.waitKey(0)
 
-    #cv2.imshow('scale calibration', edged)
-    #cv2.waitKey(0)
+      cntrs = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+      cntrs = imutils.grab_contours(cntrs)
 
-    cntrs = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cntrs = imutils.grab_contours(cntrs)
+      (cntrs, _) = contours.sort_contours(cntrs)
 
-    (cntrs, _) = contours.sort_contours(cntrs)
+      drawn_image = calib_image.copy()
+      count = 0
+      (total_pixel_width, total_pixel_height) = (0,0)
 
-    drawn_image = calib_image.copy()
-    count = 0
-    (total_pixel_width, total_pixel_height) = (0,0)
+      # TODO: Need better contour rejection criteria:
+      for c in cntrs:
+        # If not a circle, skip:
+        circularity = 4 * PI * cv2.contourArea(c) / (cv2.arcLength(c, True) ** 2)
+        if circularity < 0.8:
+          continue
 
-    # TODO: Need better contour rejection criteria:
-    for c in cntrs:
-      # If not a circle, skip:
-      circularity = 4 * PI * cv2.contourArea(c) / (cv2.arcLength(c, True) ** 2)
-      if circularity < 0.8:
-        continue
+        x,y,w,h = cv2.boundingRect(c)
+        total_pixel_width += w
+        total_pixel_height += h
+        drawn_image = cv2.rectangle(drawn_image, (x,y), (x+w, y+h), (0,255,0), 15)
+        count += 1
+      
+      if count > 0: 
+        break
+      else:
+        input("Could not find pattern try again (Enter to continue)")
 
-      x,y,w,h = cv2.boundingRect(c)
-      total_pixel_width += w
-      total_pixel_height += h
-      drawn_image = cv2.rectangle(drawn_image, (x,y), (x+w, y+h), (0,255,0), 15)
-
-      drawn_image_preview = drawn_image.copy()
-      drawn_image_preview = cv2.resize(drawn_image_preview, self.display_size)
-      count += 1
-
+    drawn_image_preview = drawn_image.copy()
+    drawn_image_preview = cv2.resize(drawn_image_preview, self.display_size)
     cv2.imshow('scale calibration', drawn_image_preview)
     cv2.waitKey(0)
 
