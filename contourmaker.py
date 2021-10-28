@@ -72,15 +72,15 @@ class ContourMaker:
 
     #thresh = cv2.erode(thresh, None, iterations=5)#4
     #thresh = cv2.dilate(thresh, None, iterations=1)#4
-    cv2.imshow('generate_contour_svg', thresh)
-    cv2.waitKey(0)
+    # cv2.imshow('generate_contour_svg', thresh)
+    # cv2.waitKey(0)
 
     #blurred = cv2.GaussianBlur(thresh, (3, 3), 0)
     #edged = cv2.Canny(thresh, 50, 130)
     edged = cm1.auto_canny(thresh)
 
-    cv2.imshow('generate_contour_svg', edged)
-    cv2.waitKey(0)
+    # cv2.imshow('generate_contour_svg', edged)
+    # cv2.waitKey(0)
 
     cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
       cv2.CHAIN_APPROX_SIMPLE)
