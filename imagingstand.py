@@ -77,10 +77,11 @@ class ImagingStand:
   def calibrate_scale(self):
     cal_object_diameter = float(input("Enter calibration dot diameter: "))
     cal_object_units = input("Enter calibration dot measurement units (in/mm): ")
-
+    self.set_led(self.led_top, 0)
     # Calibration routines:
     self.cam.calibrate_scale(cal_object_diameter, cal_object_units)
     self.cam.save_intrinsics()
+    self.set_led(self.led_top, 1)
 
   def capture_top(self):
     # GPIO are inverted
