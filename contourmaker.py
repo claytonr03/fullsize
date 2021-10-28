@@ -24,7 +24,7 @@ class ContourMaker:
 
   def __init__(self):
     # self.imager = ImagingStand(17, 27, "pi", "./camera_calibration_data_generated.json")
-    self.imager = ImagingStand(17, 27, "webcam", "./camera_calibration_data_generated.json")
+    self.imager = ImagingStand(17, 27, "pi", "./camera_calibration_data_generated.json")
 
   def auto_canny(self, image, sigma=0.33):
 
